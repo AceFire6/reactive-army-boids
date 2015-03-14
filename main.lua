@@ -44,24 +44,16 @@ end
 
 function love.draw()
   love.graphics.setBackgroundColor(39, 40, 34)
-  if (started == false) then
+  if (started == false) then -- main menu
     love.graphics.setColor(0, 255, 102)
     love.graphics.setFont(bigFont)
     love.graphics.print("Boids Prototype", 150, 200)
     love.graphics.setFont(smallFont)
     love.graphics.print("Space to start", 190, 230)
-  else
-    local width = love.graphics.getWidth()
-    local height = love.graphics.getHeight()
-    
+  else -- flocking
     for i=1,numBoids do
       love.graphics.setColor(i*i*10, i*15, i*13)
-      vertices = {
-        boidHolder[i].x, boidHolder[i].y + 5,
-        boidHolder[i].x + 5, boidHolder[i].y - 5,
-        boidHolder[i].x - 5, boidHolder[i].y - 5
-      }
-      love.graphics.polygon("fill", vertices)
+      love.graphics.polygon("fill", boidHolder[i]:getVertices())
     end
   end
 end
