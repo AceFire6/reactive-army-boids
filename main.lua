@@ -7,11 +7,7 @@ function initializeBoids(numBoids)
     rotRand = love.math.random(0, 360)
     speedRand = love.math.random()
 
-    newBoid = Boid:new(nil, xRand, yRand, rotRand, speedRand)
-    table.insert(boidHolder, i, newBoid)
-  end
-  for i=1,numBoids do
-    boidHolder[i]:print()
+    boidHolder[i] = Boid:new(nil, xRand, yRand, rotRand, speedRand)
   end
 end
 
