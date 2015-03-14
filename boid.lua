@@ -51,3 +51,12 @@ end
 function Boid:print()
 	print("x: "..self.x, "y: "..self.y, "rotation: "..self.rotation, "speed: "..self.speed)
 end
+
+
+function Boid:getVertices()
+	return {
+        self.x, self.y + 5,
+        self.x + 5, self.y - 5,
+        self.x - 5, self.y - 5
+      }
+end
