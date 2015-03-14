@@ -30,8 +30,8 @@ end
 
 
 function love.update(dt)
-  if (started == false) then
-  else
+  if (started == false) then -- main menu
+  else -- flocking
       for i=1,numBoids do
         boidHolder[i]:applySpeed()
       end  
