@@ -5,9 +5,10 @@ function initializeBoids(numBoids)
     yRand = love.math.random(1, config.window.height)
     xRand = love.math.random(1, config.window.width)
     rotRand = love.math.random(0, 360)
-    speedRand = love.math.random()
+    xSpeedRand = love.math.random(0.75, 2)
+    ySpeedRand = love.math.random(0.75, 2)
 
-    boidHolder[i] = Boid:new(nil, xRand, yRand, rotRand, speedRand)
+    boids[i] = Boid:new(nil, i, xRand, yRand, rotRand, {xSpeedRand, ySpeedRand})
   end
 end
 
@@ -15,8 +16,8 @@ function love.load()
   bigFont = love.graphics.newFont(25)
   smallFont = love.graphics.newFont(15)
   started = false
-  boidHolder = {}
-  numBoids = 10
+  boids = {}
+  numBoids = 5
   initializeBoids(numBoids)
 end
 
@@ -30,26 +31,27 @@ end
 
 
 function love.update(dt)
-  if (started == false) then -- main menu
-  else -- flocking
+  if (started) then
       for i=1,numBoids do
-        boidHolder[i]:applySpeed()
-      end  
+        boids[i]:applyVelocity()
+      end
   end
 end
 
 function love.draw()
   love.graphics.setBackgroundColor(39, 40, 34)
-  if (started == false) then -- main menu
+  if (started) then
+    for i=1,numBoids do
+      love.graphics.setColor(boids[i].colour)
+      love.graphics.polygon("fill", boids[i]:getVertices())
+      -- love.graphics.circle("line", com[1], com[2], 10, 8)
+      -- love.graphics.circle("line", boids[i].x, boids[i].y, boids[i].collisionRange, 8)
+    end
+  else
     love.graphics.setColor(0, 255, 102)
     love.graphics.setFont(bigFont)
-    love.graphics.print("Boids Prototype", 150, 200)
+    love.graphics.print("Boids Prototype", config.window.width/2 - 80, config.window.height/2 - 25)
     love.graphics.setFont(smallFont)
-    love.graphics.print("Space to start", 190, 230)
-  else -- flocking
-    for i=1,numBoids do
-      love.graphics.setColor(i*i*10, i*15, i*13)
-      love.graphics.polygon("fill", boidHolder[i]:getVertices())
-    end
+    love.graphics.print("Space to start", config.window.width/2 - 30, config.window.width/2)
   end
 end
