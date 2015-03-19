@@ -1,24 +1,27 @@
+require "vector2d"
+
 Boid = {
 	uid = 0,
-	x = 0,
-	y = 0,
-	rotation = 0,
-	velocity = {0, 0},
-	maxVelocity = {1.2, 1.2},
+	position = Vector2D:new(0, 0),
+	velocity = Vector2D:new(0, 0),
 
 	colour = {0, 0, 0},
-	massRange = 70,
-	collisionRange = 20
+	visionRange = 100,
+	collisionRange = 25,
+	vertices = {Vector2D:new(), Vector2D:new(), Vector2D:new()},
+	V_WEIGHT = 0.4,
+	CM_WEIGHT = 0.5,
+	AV_WEIGHT = 0.3,
+	B_WEIGHT = 0.7,
 }
 
 
-function Boid:new(obj, uid, x, y, rotation, velocity)
+function Boid:new(obj, uid, x, y, velocity)
 	local obj = obj or {}
 	obj.__index = self
-	obj.x = x
-	obj.y = y
-	obj.rotation = rotation * (math.pi / 180)
-	obj.velocity = velocity
+	obj.position = Vector2D:new(x, y)
+	obj.vertices = {Vector2D:new(x, y + 5), Vector2D:new(x + 5, y - 5), Vector2D:new(x - 5, y - 5)}
+	obj.velocity = Vector2D:new(velocity[1], velocity[2])
 	obj.colour = {love.math.random(1,255), love.math.random(1,255), love.math.random(1,255)}
 	obj.uid = uid
 	setmetatable(obj, self)
@@ -27,100 +30,147 @@ function Boid:new(obj, uid, x, y, rotation, velocity)
 end
 
 function Boid:applyVelocity()
-	local newVx, newVy = self:centerOfMass()
+	local centerMass = self:moveToCenter()
+	local velocityMatching = self:matchVelocity()
+	local avoidance = self:avoidNeighbours()
+	-- local boundary = self:stayInBounds()
 
-	self:addVelocity(newVx, newVy)
+	-- centerMass:print("Center Mass")
+	-- velocityMatching:print("Velocity Match")
+	-- avoidance:print("Avoidance")
+	-- boundary:print("Boundaries")
 
-	print(self.velocity[1], self.velocity[2])
+	centerMass:multiply(self.CM_WEIGHT, true)
+	velocityMatching:multiply(self.V_WEIGHT, true)
+	avoidance:multiply(self.AV_WEIGHT, true)
+	-- boundary:multiply(self.B_WEIGHT, true)
 
-	self.x = self.x + self.velocity[1]
-	if (self.x > config.window.width) then
-		self.x = 0
-	elseif (self.x < 0) then
-		self.x = config.window.width
+	self.velocity.x = self.velocity.x + centerMass.x + velocityMatching.x + avoidance.x -- + boundary.x
+	self.velocity.y = self.velocity.y + centerMass.y + velocityMatching.y + avoidance.y -- + boundary.y
+
+	self.velocity:normalize(1)
+	-- self.velocity:print("Velocity")
+
+	self.position:add(self.velocity, true)
+
+	if (self.position.x > config.window.width) then
+		self.position.x = 1
+	elseif (self.position.x < 0) then
+		self.position.x = config.window.width
+	end
+	
+	if (self.position.y > config.window.height) then
+		self.position.y = 1
+	elseif (self.position.y < 0) then
+	    self.position.y = config.window.height
 	end
 
-	self.y = self.y + self.velocity[2]
-	if (self.y > config.window.height) then
-		self.y = 0
-	elseif (self.y < 0) then
-	    self.y = config.window.height
+	self:generateVertices(self.position.x, self.position.y)
+end
+
+function Boid:stayInBounds()
+	local acceleration = Vector2D:new()
+
+	if (self.position.x > config.window.width) then
+		acceleration.x = -3
+	elseif (self.position.x < 0) then
+		acceleration.x = 3
 	end
-end
-
-function Boid:addVelocity(x, y)
-	self.velocity[1] = self.velocity[1] + x
-	self.velocity[2] = self.velocity[2] + y
-
-	if (math.abs(self.velocity[1]) > self.maxVelocity[1]) then
-		if (self.velocity[1] < 0) then
-			self.velocity[1] = -self.maxVelocity[1]
-		else
-			self.velocity[1] = self.maxVelocity[1]
-		end
+	
+	if (self.position.y > config.window.height) then
+		acceleration.y = -3
+	elseif (self.position.y < 0) then
+	    acceleration.y = 3
 	end
-
-	if (math.abs(self.velocity[2]) > self.maxVelocity[2]) then
-		if (self.velocity[2] < 0) then
-			self.velocity[2] = -self.maxVelocity[2]
-		else
-			self.velocity[2] = self.maxVelocity[2]
-		end
-	end
+	acceleration:normalize()
+	return acceleration
 end
 
-function Boid:print()
-	print("x: "..self.x, "y: "..self.y, "rotation: "..self.rotation, "velocity: "..self.velocity)
-end
-
-function Boid:getVertices()
-	return {
-		self.x, self.y + 5,
-		self.x + 5, self.y - 5,
-		self.x - 5, self.y - 5
-	}
-end
-
-function Boid:printVector(vector)
-	print("Printing Vector:")
-	for i=1,#vector do
-		print(vector[i])
-	end
-end
-
-function Boid:centerOfMass()
-	local xAv = 0
-	local yAv = 0
+function Boid:moveToCenter()
 	local neighbours = 0
+	local acceleration = Vector2D:new()
 
-	for i=1,numBoids do
-		if (self.uid ~= boids[i].uid) then
-			if (self:distanceTo(self.x, self.y, boids[i].x, boids[i].y) <= self.massRange) then
-				xAv = xAv + boids[i].x
-				yAv = yAv + boids[i].y
+	for i=1,#boids do
+		curBoid = boids[i]
+		if (self.uid ~= curBoid.uid) then
+			if (self.position:distanceTo(curBoid.position) < self.visionRange) then
+				acceleration:add(curBoid.position)
 				neighbours = neighbours + 1
 			end
 		end
 	end
 
-	if (neighbours > 0) then
-		xAv = xAv / neighbours
-		yAv = yAv / neighbours
-
-		xAv = xAv - self.x
-		yAv = yAv - self.y
-
-		xAv, yAv = self:normalize(xAv, yAv)
-		return xAv/7, yAv/7
+	if (neighbours == 0) then
+		return acceleration
 	end
-	return 0, 0
+
+	acceleration:divide(neighbours)
+	acceleration = Vector2D:new(acceleration.x - self.position.x, acceleration.y - self.position.y)
+	acceleration:normalize()
+	return acceleration
 end
 
-function Boid:normalize(x, y)
-	local abs = 1 / math.sqrt(x*x + y*y)
-	return abs * x, abs * y
+function Boid:matchVelocity()
+	local neighbours = 0
+	local acceleration = Vector2D:new()
+
+	for i=1,#boids do
+		curBoid = boids[i]
+		if (self.uid ~= curBoid.uid) then
+			if (self.position:distanceTo(curBoid.position) < self.visionRange) then
+				acceleration:add(curBoid.velocity)
+				neighbours = neighbours + 1
+			end
+		end
+	end
+
+	if (neighbours == 0) then
+		return acceleration
+	end
+
+	acceleration:divide(neighbours)
+	acceleration:normalize()
+	return acceleration
 end
 
-function Boid:distanceTo(x1, y1, x2, y2)
-	return math.sqrt(math.pow((x2 - x1), 2) + math.pow((y2 - y1), 2))
+function Boid:avoidNeighbours()
+	local neighbours = 0
+	local acceleration = Vector2D:new()
+
+	for i=1,#boids do
+		curBoid = boids[i]
+		if (self.uid ~= curBoid.uid) then
+			if (self.position:distanceTo(curBoid.position) < self.collisionRange) then
+				acceleration:add(curBoid.position:subtract(self.position), true)
+				neighbours = neighbours + 1
+			end
+		end
+	end
+
+	if (neighbours == 0) then
+		return acceleration
+	end
+
+	acceleration:divide(neighbours, true)
+	acceleration:normalize()
+	acceleration:multiply(-1, true)
+	return acceleration
+end
+
+function Boid:generateVertices(x, y)
+	self.vertices = {Vector2D:new(x, y + 10), Vector2D:new(x + 5, y - 5), Vector2D:new(x - 5, y - 5)}
+	for i=1,#self.vertices do
+		self.vertices[i]:rotate(self.position.x, self.position.y, math.atan(self.velocity.y / self.velocity.x), self.velocity)
+	end
+end
+
+function Boid:getVertices()
+	local vertices = {}
+	local index = 1
+	for i=1,#self.vertices do
+		vertices[index] = self.vertices[i].x
+		vertices[index + 1] = self.vertices[i].y
+		index = index + 2
+	end
+	return vertices
 end
