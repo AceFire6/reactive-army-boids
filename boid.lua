@@ -6,12 +6,12 @@ Boid = {
 	velocity = Vector2D:new(0, 0),
 
 	colour = {0, 0, 0},
-	visionRange = 100,
+	visionRange = 70,
 	collisionRange = 25,
 	vertices = {Vector2D:new(), Vector2D:new(), Vector2D:new()},
 	V_WEIGHT = 0.4,
-	CM_WEIGHT = 0.5,
-	AV_WEIGHT = 0.3,
+	CM_WEIGHT = 0.3,
+	AV_WEIGHT = 0.6,
 	B_WEIGHT = 0.7,
 }
 
@@ -28,6 +28,12 @@ function Boid:new(obj, uid, x, y, velocity)
 	self.__index = self
 	return obj
 end
+
+function Boid:setRanges(collision, vision)
+	self.visionRange = self.visionRange + vision
+	self.collisionRange = self.collisionRange + collision
+end
+
 
 function Boid:applyVelocity()
 	local centerMass = self:moveToCenter()
@@ -91,10 +97,9 @@ function Boid:moveToCenter()
 	local acceleration = Vector2D:new()
 
 	for i=1,#boids do
-		curBoid = boids[i]
-		if (self.uid ~= curBoid.uid) then
-			if (self.position:distanceTo(curBoid.position) < self.visionRange) then
-				acceleration:add(curBoid.position)
+		if (self.uid ~= boids[i].uid) then
+			if (self.position:distanceTo(boids[i].position) < self.visionRange) then
+				acceleration:add(boids[i].position, true)
 				neighbours = neighbours + 1
 			end
 		end
@@ -115,12 +120,9 @@ function Boid:matchVelocity()
 	local acceleration = Vector2D:new()
 
 	for i=1,#boids do
-		curBoid = boids[i]
-		if (self.uid ~= curBoid.uid) then
-			if (self.position:distanceTo(curBoid.position) < self.visionRange) then
-				acceleration:add(curBoid.velocity)
-				neighbours = neighbours + 1
-			end
+		if (self.position:distanceTo(boids[i].position) < self.visionRange) then
+			acceleration:add(boids[i].velocity, true)
+			neighbours = neighbours + 1
 		end
 	end
 
@@ -138,10 +140,9 @@ function Boid:avoidNeighbours()
 	local acceleration = Vector2D:new()
 
 	for i=1,#boids do
-		curBoid = boids[i]
-		if (self.uid ~= curBoid.uid) then
-			if (self.position:distanceTo(curBoid.position) < self.collisionRange) then
-				acceleration:add(curBoid.position:subtract(self.position), true)
+		if (self.uid ~= boids[i].uid) then
+			if (self.position:distanceTo(boids[i].position) < self.collisionRange) then
+				acceleration:add(boids[i].position:subtract(self.position), true)
 				neighbours = neighbours + 1
 			end
 		end

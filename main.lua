@@ -43,6 +43,28 @@ function love.keypressed(key)
   if key == "v" then
     showVision = not showVision
   end
+
+  if key == "q" then
+    for i=1,#boids do
+      boids[i]:setRanges(0, -5)
+    end
+  end
+  if key == "w" then
+    for i=1,#boids do
+      boids[i]:setRanges(0, 5)
+    end
+  end
+
+  if key == "a" then
+    for i=1,#boids do
+      boids[i]:setRanges(-3, 0)
+    end
+  end
+  if key == "s" then
+    for i=1,#boids do
+      boids[i]:setRanges(3, 0)
+    end
+  end
 end
 
 
