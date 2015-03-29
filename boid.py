@@ -44,6 +44,18 @@ class Boid:
 
         self.vertices = new_vertices
 
+    def accumulate(self, **kwforces):
+        accumulator = 0
+        acceleration = Vec2d(0, 0)
+        for key in config.FORCE_PRIORITY_LIST:
+            force = kwforces.get(key)
+            if force:
+                if accumulator < 3:
+                    accumulator += force.get_length()
+                    print force.get_length()
+                    acceleration += force
+        return acceleration
+
     def apply_velocity(self, boids):
         center_mass = self.move_to_center(boids)
         velocity_matching = self.match_velocity(boids)
@@ -53,7 +65,13 @@ class Boid:
         velocity_matching *= config.V_WEIGHT
         avoidance *= config.AV_WEIGHT
 
-        self.velocity += center_mass + velocity_matching + avoidance
+        acceleration = self.accumulate(
+            center_mass=center_mass,
+            velocity_matching=velocity_matching,
+            avoidance=avoidance,
+        )
+
+        self.velocity += acceleration
         self.velocity = self.velocity.normalized() * config.MAX_SPEED
         self.position += self.velocity
 

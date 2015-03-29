@@ -8,6 +8,10 @@ DRAW_VISION = False
 VISION_RANGE = 70
 COLLISION_RANGE = 30
 
+FORCE_PRIORITY_LIST = (
+    'boundary', 'avoidance', 'velocity_matching', 'center_mass',
+)
+
 V_WEIGHT = 0.4
 CM_WEIGHT = 0.3
 AV_WEIGHT = 0.6
