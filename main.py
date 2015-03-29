@@ -4,9 +4,7 @@ import pygame
 
 
 def events():
-    # event handling, gets all event from the eventqueue
     for event in pygame.event.get():
-        # only do something if the event is of type QUIT
         if event.type == pygame.QUIT:
             return False
         elif event.type == pygame.KEYUP:
@@ -15,11 +13,12 @@ def events():
             elif event.key == pygame.K_v:
                 config.DRAW_VISION = not config.DRAW_VISION
             elif event.key == pygame.K_q:
-                config.COLLISION_RANGE -= 5
+                config.COLLISION_RANGE -= (5 if config.COLLISION_RANGE >= 6
+                                           else 0)
             elif event.key == pygame.K_w:
                 config.COLLISION_RANGE += 5
             elif event.key == pygame.K_a:
-                config.VISION_RANGE -= 5
+                config.VISION_RANGE -= 5 if config.VISION_RANGE >= 6 else 0
             elif event.key == pygame.K_s:
                 config.VISION_RANGE += 5
     return True
@@ -44,9 +43,7 @@ def render(screen, boids):
     pygame.display.flip()
 
 
-# define a main function
 def main():
-    # initialize the pygame module
     pygame.init()
     pygame.display.set_caption("Boids - Prototype")
     screen = pygame.display.set_mode(
@@ -54,16 +51,13 @@ def main():
     running = True
 
     boids = [Boid() for i in range(config.NUM_BOIDS)]
-
-    # main loop
+    clock = pygame.time.Clock()
     while running:
+        clock.tick(60)
         pygame.time.wait(1)
         running = events()
         loop(boids)
         render(screen, boids)
 
-# run the main function only if this module is executed as the main script
-# (if you import this as a module then nothing is executed)
 if __name__ == "__main__":
-    # call the main function
     main()
