@@ -21,6 +21,8 @@ def events():
                 config.VISION_RANGE -= 5 if config.VISION_RANGE >= 6 else 0
             elif event.key == pygame.K_s:
                 config.VISION_RANGE += 5
+            elif event.key == pygame.K_ESCAPE:
+                return False
     return True
 
 
