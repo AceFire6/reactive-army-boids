@@ -7,6 +7,14 @@ vertices = test_boid.vertices
 velocity = test_boid.velocity
 position = test_boid.position
 
+near_boid = Boid()
+near_boid.position = test_boid.position + Vec2d(30, 0)
+
+far_boid = Boid()
+far_boid.position = test_boid.position + Vec2d(100, 0)
+
+boids = [test_boid, near_boid, far_boid]
+
 
 def test_boid_uniqueness():
     boid2 = Boid()
@@ -44,7 +52,51 @@ def test_boid_generated_values():
 
 def test_boid_get_center():
     assert test_boid.get_center() == Vec2d(int(position.x), int(position.y))
-    
-def test_accumulator():
-    assert 1 == 1
 
+
+def test_accumulate():
+    kwargs = dict(
+        avoidance=Vec2d(0.4, 0.4),
+        velocity_matching=Vec2d(0.3, 0.3),
+        center_mass=Vec2d(0.4, 0.4),
+    )
+    accel = test_boid.accumulate(**kwargs)
+    assert accel == Vec2d(0.7, 0.7)
+
+
+def test_get_neighbours():
+    boid2 = Boid()
+    boid2.position = test_boid.position + Vec2d(3, 3)
+
+    neighbours = test_boid.get_neighbours([boid2, ], 3)
+    assert type(neighbours) == list
+    assert len(neighbours) == 0
+
+    neighbours = test_boid.get_neighbours([boid2], 5)
+    assert len(neighbours) == 1
+    assert neighbours[0] == boid2
+
+
+def test_move_to_center():
+    acceleration = test_boid.move_to_center([])
+    assert acceleration == Vec2d(0, 0)
+
+    acceleration = test_boid.move_to_center(boids)
+    assert acceleration == ((near_boid.position - test_boid.position) /
+                            config.MOVE_GRANULARITY)
+
+
+def test_match_velocity():
+    acceleration = test_boid.match_velocity([])
+    assert acceleration == Vec2d(0, 0)
+
+    acceleration = test_boid.match_velocity(boids)
+    assert acceleration == near_boid.velocity / config.MOVE_GRANULARITY
+
+
+def test_avoid_neighbours():
+    acceleration = test_boid.avoid_neighbours([])
+    assert acceleration == Vec2d(0, 0)
+
+    acceleration = test_boid.avoid_neighbours(boids)
+    assert acceleration == test_boid.position - near_boid.position
