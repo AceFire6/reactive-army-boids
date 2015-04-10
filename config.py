@@ -1,5 +1,7 @@
-SCREEN_WIDTH = 700
-SCREEN_HEIGHT = 700
+SCREEN_WIDTH = 600
+SCREEN_HEIGHT = 600
+
+DEBUG = False
 
 NUM_BOIDS = 20
 MAX_SPEED = 3
@@ -16,3 +18,13 @@ V_WEIGHT = 0.4
 CM_WEIGHT = 0.3
 AV_WEIGHT = 0.6
 B_WEIGHT = 0.7
+
+MOVE_GRANULARITY = 12
+
+
+def debug_print(*args):
+    if DEBUG:
+        string = ''
+        for item in args:
+            string += ' ' + str(item)
+        print string
