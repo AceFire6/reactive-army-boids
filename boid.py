@@ -61,20 +61,24 @@ class Boid:
                     acceleration += force
         return acceleration
 
-    def apply_velocity(self, boids):
+    def apply_velocity(self, boids, obstacles):
+        formation = (self.stay_in_formation() * config.F_WEIGHT).normalized()
         boundary = (self.avoid_boundary() * config.B_WEIGHT).normalized()
         center_mass = (
             self.move_to_center(boids) * config.CM_WEIGHT).normalized()
         velocity_matching = (
             self.match_velocity(boids) * config.V_WEIGHT).normalized()
         avoidance = (
-            self.avoid_neighbours(boids) * config.AV_WEIGHT).normalized()
+            (self.avoid_neighbours(boids) +
+             self.avoid_obstacles(obstacles)) * config.AV_WEIGHT).normalized()
 
+        zero = Vec2d(0, 0)
         acceleration = self.accumulate(
-            boundary=boundary,
-            center_mass=center_mass,
-            velocity_matching=velocity_matching,
-            avoidance=avoidance,
+            formation=formation if config.FORMATION else zero,
+            boundary=boundary if config.BOUNDARY else zero,
+            center_mass=center_mass if config.CENTER_MASS else zero,
+            velocity_matching=velocity_matching if config.VELOCITY else zero,
+            avoidance=avoidance if config.AVOID else zero,
         )
 
         config.debug_print('ACCELERATION:', acceleration)
@@ -94,6 +98,16 @@ class Boid:
         #     self.position.y = config.SCREEN_HEIGHT
 
         self.generate_vertices()
+
+    def stay_in_formation(self):
+        acceleration = Vec2d(0, 0)
+
+        dist = self.position - config.F_CENTER
+
+        if dist.get_length() > config.F_RADIUS:
+            acceleration = -(dist.normalized() * 10)
+
+        return acceleration
 
     def get_neighbours(self, boids, distance):
         neighbours = []
@@ -118,6 +132,22 @@ class Boid:
             acceleration += Vec2d(0, rebound)
 
         return acceleration
+
+    def avoid_obstacles(self, obstacles):
+        acceleration = Vec2d(0, 0)
+        near_obstacles = \
+            [ob for ob in obstacles
+             if self.position.get_distance(ob.position)
+             < config.COLLISION_RANGE * 3]
+
+        if not near_obstacles:
+            return acceleration
+
+        for obstacle in near_obstacles:
+            distance_mult = self.get_inverse_square(obstacle)
+            acceleration += (obstacle.position - self.position) * distance_mult
+
+        return -(acceleration / float(len(list(near_obstacles))))
 
     def move_to_center(self, boids):
         acceleration = Vec2d(0, 0)
