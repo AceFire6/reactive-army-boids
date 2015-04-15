@@ -100,3 +100,15 @@ def test_avoid_neighbours():
 
     acceleration = test_boid.avoid_neighbours(boids)
     assert acceleration == test_boid.position - near_boid.position
+
+
+def test_inverse_distance_square():
+    near_inverse = test_boid.get_inverse_square(near_boid)
+    assert near_inverse == 1.0 / test_boid.position.get_dist_sqrd(near_boid.position)
+
+    far_inverse = test_boid.get_inverse_square(far_boid)
+    assert far_inverse == 1.0 / test_boid.position.get_dist_sqrd(far_boid.position)
+
+    assert near_inverse > far_inverse
+
+
