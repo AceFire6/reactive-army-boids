@@ -62,6 +62,7 @@ class Boid:
         return acceleration
 
     def apply_velocity(self, boids):
+        boundary = (self.avoid_boundary() * config.B_WEIGHT).normalized()
         center_mass = (
             self.move_to_center(boids) * config.CM_WEIGHT).normalized()
         velocity_matching = (
@@ -70,6 +71,7 @@ class Boid:
             self.avoid_neighbours(boids) * config.AV_WEIGHT).normalized()
 
         acceleration = self.accumulate(
+            boundary=boundary,
             center_mass=center_mass,
             velocity_matching=velocity_matching,
             avoidance=avoidance,
@@ -81,15 +83,15 @@ class Boid:
         self.velocity = self.velocity.normalized() * config.MAX_SPEED
         self.position += self.velocity
 
-        if self.position.x > config.SCREEN_WIDTH:
-            self.position.x = 1
-        elif self.position.x < 0:
-            self.position.x = config.SCREEN_WIDTH
-
-        if self.position.y > config.SCREEN_HEIGHT:
-            self.position.y = 1
-        elif self.position.y < 0:
-            self.position.y = config.SCREEN_HEIGHT
+        # if self.position.x > config.SCREEN_WIDTH:
+        #     self.position.x = 1
+        # elif self.position.x < 0:
+        #     self.position.x = config.SCREEN_WIDTH
+        #
+        # if self.position.y > config.SCREEN_HEIGHT:
+        #     self.position.y = 1
+        # elif self.position.y < 0:
+        #     self.position.y = config.SCREEN_HEIGHT
 
         self.generate_vertices()
 
@@ -101,6 +103,22 @@ class Boid:
                     neighbours.append(boid)
         return neighbours
 
+    def avoid_boundary(self):
+        rebound = 20
+        acceleration = Vec2d(0, 0)
+
+        if self.position.x > config.SCREEN_WIDTH + 40:
+            acceleration += Vec2d(-rebound, 0)
+        elif self.position.x < -40:
+            acceleration += Vec2d(rebound, 0)
+
+        if self.position.y > config.SCREEN_HEIGHT + 40:
+            acceleration += Vec2d(0, -rebound)
+        elif self.position.y < -40:
+            acceleration += Vec2d(0, rebound)
+
+        return acceleration
+
     def move_to_center(self, boids):
         acceleration = Vec2d(0, 0)
         neighbours = self.get_neighbours(boids, config.VISION_RANGE)
@@ -109,10 +127,11 @@ class Boid:
             return acceleration
 
         for boid in neighbours:
-            acceleration += boid.position
+            distance_mult = self.get_inverse_square(boid)
+            acceleration += boid.position * distance_mult
 
         acceleration /= len(neighbours)
-        return (acceleration - self.position) / config.MOVE_GRANULARITY
+        return (acceleration - self.position) / float(config.MOVE_GRANULARITY)
 
     def match_velocity(self, boids):
         acceleration = Vec2d(0, 0)
@@ -122,9 +141,10 @@ class Boid:
             return acceleration
 
         for boid in neighbours:
-            acceleration += boid.velocity
+            distance_mult = self.get_inverse_square(boid)
+            acceleration += boid.velocity * distance_mult
 
-        return acceleration / (len(neighbours) * config.MOVE_GRANULARITY)
+        return acceleration / float(len(neighbours) * config.MOVE_GRANULARITY)
 
     def avoid_neighbours(self, boids):
         acceleration = Vec2d(0, 0)
@@ -134,6 +154,10 @@ class Boid:
             return acceleration
 
         for boid in neighbours:
-            acceleration += (boid.position - self.position)
+            distance_mult = self.get_inverse_square(boid)
+            acceleration += (boid.position - self.position) * distance_mult
 
         return -1 * (acceleration / len(neighbours))
+
+    def get_inverse_square(self, other_boid):
+        return 1.0 / self.position.get_dist_sqrd(other_boid.position)
