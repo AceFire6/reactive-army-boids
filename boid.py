@@ -1,19 +1,24 @@
 import config
 import random
+import pygame
 from vec2d import Vec2d
 
 
 class Boid:
     def __init__(self):
         self.position = Vec2d(0, 0)
+        self.angle = 0
         self._generate_and_set_position()
         self.velocity = Vec2d(0, 0)
-        self._generate_and_set_velocity()
+        # self._generate_and_set_velocity()
         self.vertices = [Vec2d(0, 0), Vec2d(0, 0), Vec2d(0, 0)]
         self.generate_vertices()
+        self.colour = config.WHITE
+        self.selected = False
+        # self._generate_and_set_colour()
 
-        self.colour = (0, 0, 0)
-        self._generate_and_set_colour()
+    def contains(self, mouse_pos):
+        return self.position.get_distance(mouse_pos) < 10
 
     def get_center(self):
         return [int(self.position.x), int(self.position.y)]
@@ -40,7 +45,9 @@ class Boid:
         operations = (Vec2d(0, 10), Vec2d(5, -5), Vec2d(-5, -5))
         new_vertices = []
         for vertex, operation in zip(self.vertices, operations):
-            operation.rotate(self.velocity.get_angle() - 90)
+            if self.velocity != Vec2d(0, 0):
+                self.angle = self.velocity.get_angle() - 90
+            operation.rotate(self.angle)
             vertex = self.position + operation
             new_vertices.append(vertex)
 
@@ -61,23 +68,53 @@ class Boid:
                     acceleration += force
         return acceleration
 
-    def apply_velocity(self, boids, obstacles):
-        formation = (self.stay_in_formation() * config.F_WEIGHT).normalized()
+    def face_nearest_enemy(self, near_obstacles):
+        dist = config.VISION_RANGE
+        closest_enemy = 0
+        for near_obstacle in near_obstacles:
+            temp = self.position.get_distance(near_obstacle.position)
+            if temp < dist:
+                closest_enemy = near_obstacle
+                dist = temp
+        self.angle = self.position.get_angle_between(closest_enemy.position)
+        self.generate_vertices()
+        self.colour = config.RED
+
+    def update(self, boids, obstacles=list()):
+        if self.colour == config.RED:
+            self.colour = config.WHITE
+        if self.selected:
+            self.colour = config.CYAN
+        if not obstacles:
+            self.apply_velocity(boids)
+        else:
+            near_obstacles = [ob for ob in obstacles
+                              if config.VISION_RANGE >
+                              self.position.get_distance(ob.position)
+                              > config.COLLISION_RANGE * 2]
+            if not near_obstacles:
+                self.apply_velocity(boids, obstacles)
+            else:
+                self.face_nearest_enemy(near_obstacles)
+
+    def apply_velocity(self, boids, obstacles=list()):
+        self.velocity = Vec2d(0, 0)
+        # formation = (self.stay_in_formation() * config.F_WEIGHT).normalized()
         boundary = (self.avoid_boundary() * config.B_WEIGHT).normalized()
-        center_mass = (
-            self.move_to_center(boids) * config.CM_WEIGHT).normalized()
-        velocity_matching = (
-            self.match_velocity(boids) * config.V_WEIGHT).normalized()
+        # center_mass = (
+        #     self.move_to_center(boids) * config.CM_WEIGHT).normalized()
+        # velocity_matching = (
+        #     self.match_velocity(boids) * config.V_WEIGHT).normalized()
         avoidance = (
             (self.avoid_neighbours(boids) +
              self.avoid_obstacles(obstacles)) * config.AV_WEIGHT).normalized()
 
         zero = Vec2d(0, 0)
         acceleration = self.accumulate(
-            formation=formation if config.FORMATION else zero,
+            # formation=formation if config.FORMATION else zero,
             boundary=boundary if config.BOUNDARY else zero,
-            center_mass=center_mass if config.CENTER_MASS else zero,
-            velocity_matching=velocity_matching if config.VELOCITY else zero,
+            # center_mass=center_mass if config.CENTER_MASS else zero,
+            # velocity_matching=velocity_matching if config.VELOCITY else zero,
             avoidance=avoidance if config.AVOID else zero,
         )
 
@@ -86,17 +123,6 @@ class Boid:
         self.velocity += acceleration
         self.velocity = self.velocity.normalized() * config.MAX_SPEED
         self.position += self.velocity
-
-        # if self.position.x > config.SCREEN_WIDTH:
-        #     self.position.x = 1
-        # elif self.position.x < 0:
-        #     self.position.x = config.SCREEN_WIDTH
-        #
-        # if self.position.y > config.SCREEN_HEIGHT:
-        #     self.position.y = 1
-        # elif self.position.y < 0:
-        #     self.position.y = config.SCREEN_HEIGHT
-
         self.generate_vertices()
 
     def stay_in_formation(self):
@@ -138,7 +164,7 @@ class Boid:
         near_obstacles = \
             [ob for ob in obstacles
              if self.position.get_distance(ob.position)
-             < config.COLLISION_RANGE * 3]
+             < config.COLLISION_RANGE * 2]
 
         if not near_obstacles:
             return acceleration
@@ -191,3 +217,10 @@ class Boid:
 
     def get_inverse_square(self, other_boid):
         return 1.0 / self.position.get_dist_sqrd(other_boid.position)
+
+    def select(self):
+        self.selected = not self.selected
+        if self.selected:
+            self.colour = config.CYAN
+        else:
+            self.colour = config.WHITE

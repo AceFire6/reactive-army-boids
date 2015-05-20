@@ -3,14 +3,20 @@ from vec2d import Vec2d
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 600
 
+SELECTED_ENTITY = None
+
 DEBUG = False
 
 NUM_BOIDS = 20
 MAX_SPEED = 3
 DRAW_COLLISION = False
 DRAW_VISION = False
-VISION_RANGE = 80
+VISION_RANGE = 150
 COLLISION_RANGE = 30
+
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+CYAN = (0, 200, 200)
 
 FORCE_PRIORITY_LIST = (
     'formation', 'boundary', 'avoidance', 'velocity_matching', 'center_mass',

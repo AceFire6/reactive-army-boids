@@ -4,7 +4,7 @@ import config
 import pygame
 
 
-def events():
+def events(entities):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
@@ -39,15 +39,32 @@ def events():
             elif event.key == pygame.K_F5:
                 config.CENTER_MASS = not config.CENTER_MASS
                 print "Center Mass:", config.CENTER_MASS
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            states = pygame.mouse.get_pressed()
+            config.debug_print("STATES:", states)
+            mouse_pos = pygame.mouse.get_pos()
+            if states == (1, 0, 0): # Left click
+                clicked_obj = [i for i in entities if i.contains(mouse_pos)]
+                if clicked_obj:
+                    if config.SELECTED_ENTITY:
+                        config.SELECTED_ENTITY.select()
+                    config.SELECTED_ENTITY = clicked_obj[0]
+                    clicked_obj[0].select()
+                elif config.SELECTED_ENTITY:
+                    config.SELECTED_ENTITY.select()
+                    config.SELECTED_ENTITY = None
+            elif states == (0, 0, 1): # Right click
+                if config.SELECTED_ENTITY:
+                    print "MOVE COMMAND"
     return True
 
 
 def loop(entities, obstacles=None):
     for entity in entities:
         if obstacles:
-            entity.apply_velocity(entities, obstacles)
+            entity.update(entities, obstacles)
         else:
-            entity.apply_velocity(entities)
+            entity.update(entities)
 
 
 def render(screen, entities):
@@ -60,9 +77,8 @@ def render(screen, entities):
         if config.DRAW_VISION:
             pygame.draw.circle(screen, entity.colour, entity.get_center(),
                                config.VISION_RANGE, 1)
-    pygame.draw.circle(screen, (255, 255, 255), config.F_CENTER,
-                       config.F_RADIUS, 1)
     pygame.display.flip()
+
 
 def main():
     pygame.init()
@@ -73,11 +89,12 @@ def main():
 
     boids = [Boid() for i in range(config.NUM_BOIDS)]
     enemies = [Enemy((2, 0))]
+    entities = boids + enemies
     clock = pygame.time.Clock()
     while running:
         clock.tick(60)
         pygame.time.wait(1)
-        running = events()
+        running = events(entities)
         loop(boids, obstacles=enemies)
         loop(enemies)
         render(screen, boids + enemies)
