@@ -6,6 +6,16 @@ import math
 
 
 boundaries = True
+center = None
+
+
+def add_tuple(t1, t2):
+    return tuple((t1[i] + t2[i]) for i in range(len(t1)))
+
+
+def with_center(placed_units):
+    global center
+    return [add_tuple(placed_unit, center) for placed_unit in placed_units]
 
 
 def distance_to(point1, point2):
@@ -40,7 +50,8 @@ def get_closest_and_dist(point, close_units):
 
 
 def events(placed_units):
-    global boundaries
+    global boundaries, center
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
@@ -57,6 +68,7 @@ def events(placed_units):
                     'title': 'Save the formation'}
                 save_file = tkFileDialog.asksaveasfile('w', **options)
                 if save_file:
+                    save_file.write(str(center) + '\n')
                     for placed_unit in placed_units:
                         save_file.write(str(placed_unit) + '\n')
                     save_file.close()
@@ -67,33 +79,43 @@ def events(placed_units):
                     'title': 'Open formation'}
                 open_file = tkFileDialog.askopenfile('r', **options)
                 if open_file:
-                    for line in open_file.readlines():
-                        new_point = eval(line)
-                        if not close_to(new_point, placed_units):
-                            placed_units.append(new_point)
+                    center = eval(open_file.readline())
+                    for line in open_file.readlines()[0:]:
+                        print line
+                        placed_units.append(eval(line))
                     open_file.close()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             states = pygame.mouse.get_pressed()
             config.debug_print("STATES:", states)
             mouse_pos = pygame.mouse.get_pos()
-            close_units = close_to(mouse_pos, placed_units)
+            close_units = close_to(mouse_pos, with_center(placed_units))
             if states == (1, 0, 0): # Left click - Add
+                if not center:
+                    center = mouse_pos
+                    return True
                 if not close_units:
-                    placed_units.append(mouse_pos)
+                    placed_units.append((mouse_pos[0] - center[0],
+                                         mouse_pos[1] - center[1]))
             elif states == (0, 0, 1): # Right click - Delete
                 if close_units:
-                    placed_units.remove(get_closest(mouse_pos, close_units))
-
+                    closest = get_closest(mouse_pos, close_units)
+                    print (center[0] - closest[0], center[1] - closest[1])
+                    placed_units.remove((closest[0] - center[0],
+                                         closest[1] - center[1]))
     return True
 
 
 def render(screen, placed_units):
-    global boundaries
+    global boundaries, center
     screen.fill((0, 0, 0))
     colour = config.WHITE
     closest_to_mouse, dist = get_closest_and_dist(pygame.mouse.get_pos(),
-                                                  placed_units)
-    for unit in placed_units:
+                                                  with_center(placed_units))
+
+    if center:
+        pygame.draw.circle(screen, (0, 100, 200), center, 10, 0)
+
+    for unit in with_center(placed_units):
         if unit == closest_to_mouse and dist <= config.COLLISION_RANGE:
             colour = config.RED
         if boundaries:
