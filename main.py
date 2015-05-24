@@ -1,10 +1,20 @@
+from Tkinter import *
+import tkFileDialog
 from boid import Boid
 from enemy import Enemy
+from formation import Formation
 import config
 import pygame
+from vec2d import Vec2d
+
+boids = []
+enemies = []
+formation = None
+enemy_start = None
 
 
-def events(entities):
+def events():
+    global boids, formation, enemy_start
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
@@ -39,44 +49,57 @@ def events(entities):
             elif event.key == pygame.K_F5:
                 config.CENTER_MASS = not config.CENTER_MASS
                 print "Center Mass:", config.CENTER_MASS
+            elif event.key == pygame.K_o and (pygame.key.get_mods() &
+                                              pygame.KMOD_CTRL):
+                options = {
+                    'filetypes': [('Formations', '.fm')],
+                    'title': 'Open formation'}
+                formation = Formation(tkFileDialog.askopenfile('r', **options))
+                boids = formation.gen_and_get_boids()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             states = pygame.mouse.get_pressed()
             config.debug_print("STATES:", states)
             mouse_pos = pygame.mouse.get_pos()
             if states == (1, 0, 0): # Left click
-                clicked_obj = [i for i in entities if i.contains(mouse_pos)]
-                if clicked_obj:
-                    if config.SELECTED_ENTITY:
-                        config.SELECTED_ENTITY.select()
-                    config.SELECTED_ENTITY = clicked_obj[0]
-                    clicked_obj[0].select()
-                elif config.SELECTED_ENTITY:
-                    config.SELECTED_ENTITY.select()
-                    config.SELECTED_ENTITY = None
+                if not enemy_start:
+                    enemy_start = mouse_pos
+                else:
+                    enemies.append(Enemy(Vec2d(enemy_start), Vec2d(mouse_pos)))
+                    enemy_start = None
             elif states == (0, 0, 1): # Right click
-                if config.SELECTED_ENTITY:
-                    print "MOVE COMMAND"
+                if formation:
+                    formation.set_waypoint(mouse_pos)
     return True
 
 
-def loop(entities, obstacles=None):
-    for entity in entities:
+def loop(obstacles=None):
+    global boids, formation
+    if formation:
+        formation.update()
+    for boid in boids:
         if obstacles:
-            entity.update(entities, obstacles)
+            boid.update(boids, obstacles)
         else:
-            entity.update(entities)
+            boid.update(boids)
+    for enemy in enemies:
+        enemy.update()
 
 
-def render(screen, entities):
+def render(screen):
+    global boids, formation
     screen.fill((0, 0, 0))
-    for entity in entities:
-        pygame.draw.polygon(screen, entity.colour, entity.vertices)
+    if formation:
+        pygame.draw.circle(screen, (0, 100, 200), formation.center, 5, 0)
+    for boid in boids:
+        pygame.draw.polygon(screen, boid.colour, boid.vertices)
         if config.DRAW_COLLISION:
-            pygame.draw.circle(screen, entity.colour, entity.get_center(),
+            pygame.draw.circle(screen, boid.colour, boid.get_center(),
                                config.COLLISION_RANGE, 1)
         if config.DRAW_VISION:
-            pygame.draw.circle(screen, entity.colour, entity.get_center(),
+            pygame.draw.circle(screen, boid.colour, boid.get_center(),
                                config.VISION_RANGE, 1)
+    for enemy in enemies:
+        pygame.draw.polygon(screen, config.RED, enemy.vertices)
     pygame.display.flip()
 
 
@@ -87,17 +110,16 @@ def main():
         (config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
     running = True
 
-    boids = [Boid() for i in range(config.NUM_BOIDS)]
-    enemies = [Enemy((2, 0))]
-    entities = boids + enemies
+    win = Tk()
+    win.withdraw()
+
     clock = pygame.time.Clock()
     while running:
         clock.tick(60)
         pygame.time.wait(1)
-        running = events(entities)
-        loop(boids, obstacles=enemies)
-        loop(enemies)
-        render(screen, boids + enemies)
+        running = events()
+        loop(enemies) if enemies else loop()
+        render(screen)
 
 if __name__ == "__main__":
     main()

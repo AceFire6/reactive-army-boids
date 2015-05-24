@@ -7,6 +7,7 @@ import math
 
 boundaries = True
 center = None
+direction = None
 
 
 def add_tuple(t1, t2):
@@ -50,7 +51,7 @@ def get_closest_and_dist(point, close_units):
 
 
 def events(placed_units):
-    global boundaries, center
+    global boundaries, center, direction
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -69,6 +70,7 @@ def events(placed_units):
                 save_file = tkFileDialog.asksaveasfile('w', **options)
                 if save_file:
                     save_file.write(str(center) + '\n')
+                    save_file.write(str(direction) + '\n')
                     for placed_unit in placed_units:
                         save_file.write(str(placed_unit) + '\n')
                     save_file.close()
@@ -80,6 +82,7 @@ def events(placed_units):
                 open_file = tkFileDialog.askopenfile('r', **options)
                 if open_file:
                     center = eval(open_file.readline())
+                    direction = eval(open_file.readline())
                     for line in open_file.readlines()[0:]:
                         print line
                         placed_units.append(eval(line))
@@ -92,6 +95,9 @@ def events(placed_units):
             if states == (1, 0, 0): # Left click - Add
                 if not center:
                     center = mouse_pos
+                    return True
+                if not direction:
+                    direction = mouse_pos
                     return True
                 if not close_units:
                     placed_units.append((mouse_pos[0] - center[0],
@@ -113,7 +119,9 @@ def render(screen, placed_units):
                                                   with_center(placed_units))
 
     if center:
-        pygame.draw.circle(screen, (0, 100, 200), center, 10, 0)
+        pygame.draw.circle(screen, config.CYAN, center, 10, 0)
+    if direction:
+        pygame.draw.circle(screen, config.GREEN, direction, 5, 0)
 
     for unit in with_center(placed_units):
         if unit == closest_to_mouse and dist <= config.COLLISION_RANGE:
