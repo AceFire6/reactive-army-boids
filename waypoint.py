@@ -8,3 +8,6 @@ class Waypoint(object):
 
     def update_position(self, new_center):
         self.center = new_center
+
+    def rotate(self, rotation):
+        self.relative_pos.rotate(rotation)

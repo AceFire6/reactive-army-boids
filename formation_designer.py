@@ -97,7 +97,8 @@ def events(placed_units):
                     center = mouse_pos
                     return True
                 if not direction:
-                    direction = mouse_pos
+                    direction = (mouse_pos[0] - center[0],
+                                 mouse_pos[1] - center[1])
                     return True
                 if not close_units:
                     placed_units.append((mouse_pos[0] - center[0],
@@ -121,7 +122,8 @@ def render(screen, placed_units):
     if center:
         pygame.draw.circle(screen, config.CYAN, center, 10, 0)
     if direction:
-        pygame.draw.circle(screen, config.GREEN, direction, 5, 0)
+        pygame.draw.circle(screen, config.GREEN,
+                           add_tuple(direction, center), 5, 0)
 
     for unit in with_center(placed_units):
         if unit == closest_to_mouse and dist <= config.COLLISION_RANGE:
