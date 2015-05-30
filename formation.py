@@ -34,7 +34,7 @@ class Formation(object):
             self.waypoint = Vec2d(center_pair_or_x, y)
 
     def gen_and_get_boids(self):
-        return [Boid(start_pos=(position + self.center), waypoint=waypoint)
+        return [Boid((position + self.center), waypoint, self)
                 for position, waypoint in zip(self.positions, self.waypoints)]
 
     @property

@@ -1,15 +1,13 @@
 import config
-import random
-import pygame
 from vec2d import Vec2d
-from waypoint import Waypoint
 
 
 class Boid:
-    def __init__(self, start_pos=None, waypoint=None):
-        self.position = start_pos or Vec2d(0, 0)
+    def __init__(self, start_pos, waypoint, formation):
+        self.position = start_pos
+        self._formation = formation
         self.facing = None
-        self.waypoint = waypoint or Waypoint(Vec2d(0, 0), self.position)
+        self.waypoint = waypoint
         self.angle = 0
         self.velocity = Vec2d(0, 0)
         self.vertices = [Vec2d(0, 0), Vec2d(0, 0), Vec2d(0, 0)]
@@ -31,6 +29,9 @@ class Boid:
                                - self.angle) / 10
             elif self.facing:
                 self.angle += (self.facing.get_angle() - 90 - self.angle) / 40
+            elif self.velocity == Vec2d(0, 0) and self._formation:
+                self.angle += (self._formation.facing.get_angle() - 90
+                               - self.angle) / 40
             operation.rotate(self.angle)
             vertex = self.position + operation
             new_vertices.append(vertex)
@@ -80,23 +81,13 @@ class Boid:
         else:
             self.face_nearest_enemy(obstacles)
 
-        if not self.facing and not self.velocity:
-            if abs(self.angle) != abs(self.velocity.get_angle() - 90):
-                self.angle += (self.velocity.get_angle() - self.angle) / 30
-                self.generate_vertices()
-
     def apply_velocity(self, boids, obstacles=list()):
         self.velocity = Vec2d(0, 0)
         formation = (self.stay_in_formation() * config.F_WEIGHT).normalized()
-        boundary = (self.avoid_boundary() * config.B_WEIGHT).normalized()
         avoidance = (self.avoid_neighbours(boids)).normalized()
 
-        zero = Vec2d(0, 0)
         acceleration = self.accumulate(
-            formation=formation if config.FORMATION else zero,
-            boundary=boundary if config.BOUNDARY else zero,
-            avoidance=avoidance if config.AVOID else zero,
-        )
+            formation=formation, avoidance=avoidance)
 
         config.debug_print('ACCELERATION:', acceleration)
 
@@ -122,22 +113,6 @@ class Boid:
                 if self.position.get_distance(boid.position) <= distance:
                     neighbours.append(boid)
         return neighbours
-
-    def avoid_boundary(self):
-        rebound = 20
-        acceleration = Vec2d(0, 0)
-
-        if self.position.x > config.SCREEN_WIDTH + 40:
-            acceleration += Vec2d(-rebound, 0)
-        elif self.position.x < -40:
-            acceleration += Vec2d(rebound, 0)
-
-        if self.position.y > config.SCREEN_HEIGHT + 40:
-            acceleration += Vec2d(0, -rebound)
-        elif self.position.y < -40:
-            acceleration += Vec2d(0, rebound)
-
-        return acceleration
 
     def avoid_obstacles(self, obstacles):
         acceleration = Vec2d(0, 0)

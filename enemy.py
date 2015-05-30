@@ -4,7 +4,7 @@ from vec2d import Vec2d
 
 class Enemy(object, Boid):
     def __init__(self, start, end):
-        Boid.__init__(self, start_pos=start)
+        Boid.__init__(self, start, None, None)
         self._start = Vec2d(start.x, start.y)
         self._end = end
         self._target = end
