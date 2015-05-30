@@ -41,9 +41,21 @@ class Formation(object):
     def center(self):
         return Vec2d(int(self._center[0]), int(self._center[1]))
 
+    @property
+    def direction(self):
+        return self._direction + self._center
+
+    @property
+    def facing(self):
+        return self.direction - self._center
+
     def update(self):
         if self.waypoint and (self._center.get_distance(self.waypoint) > 10):
-            acceleration = (self.waypoint - self.center).normalized()
-            self._center += acceleration #TODO SOMETHING
+            acceleration = self.facing.normalized()
+            to_waypoint = self.waypoint - self._center
+            rotation = self.facing.get_angle_between(to_waypoint) / 60
+            self._direction.rotate(rotation)
+            self._center += acceleration
             for waypoint in self.waypoints:
+                waypoint.rotate(rotation)
                 waypoint.update_position(self.center)
