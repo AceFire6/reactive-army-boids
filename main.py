@@ -1,6 +1,5 @@
 from Tkinter import *
 import tkFileDialog
-from boid import Boid
 from enemy import Enemy
 from formation import Formation
 import config
@@ -14,41 +13,18 @@ enemy_start = None
 
 
 def events():
-    global boids, formation, enemy_start
+    global boids, enemies, formation, enemy_start
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
         elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_c:
-                config.DRAW_COLLISION = not config.DRAW_COLLISION
-            elif event.key == pygame.K_v:
-                config.DRAW_VISION = not config.DRAW_VISION
-            elif event.key == pygame.K_q:
-                config.COLLISION_RANGE -= (5 if config.COLLISION_RANGE >= 6
-                                           else 0)
-            elif event.key == pygame.K_w:
-                config.COLLISION_RANGE += 5
-            elif event.key == pygame.K_a:
-                config.VISION_RANGE -= 5 if config.VISION_RANGE >= 6 else 0
-            elif event.key == pygame.K_s:
-                config.VISION_RANGE += 5
+            if event.key == pygame.K_r:
+                boids = []
+                enemies = []
+                formation = None
+                enemy_start = None
             elif event.key == pygame.K_ESCAPE:
                 return False
-            elif event.key == pygame.K_F1:
-                config.FORMATION = not config.FORMATION
-                print "Formation:", config.FORMATION
-            elif event.key == pygame.K_F2:
-                config.BOUNDARY = not config.BOUNDARY
-                print "Boundary:", config.BOUNDARY
-            elif event.key == pygame.K_F3:
-                config.AVOID = not config.AVOID
-                print "Avoid:", config.AVOID
-            elif event.key == pygame.K_F4:
-                config.VELOCITY = not config.VELOCITY
-                print "Velocity:", config.VELOCITY
-            elif event.key == pygame.K_F5:
-                config.CENTER_MASS = not config.CENTER_MASS
-                print "Center Mass:", config.CENTER_MASS
             elif event.key == pygame.K_o and (pygame.key.get_mods() &
                                               pygame.KMOD_CTRL):
                 options = {
@@ -92,12 +68,6 @@ def render(screen):
         pygame.draw.circle(screen, (0, 100, 200), formation.center, 5, 0)
     for boid in boids:
         pygame.draw.polygon(screen, boid.colour, boid.vertices)
-        if config.DRAW_COLLISION:
-            pygame.draw.circle(screen, boid.colour, boid.get_center(),
-                               config.COLLISION_RANGE, 1)
-        if config.DRAW_VISION:
-            pygame.draw.circle(screen, boid.colour, boid.get_center(),
-                               config.VISION_RANGE, 1)
     for enemy in enemies:
         pygame.draw.polygon(screen, config.RED, enemy.vertices)
     pygame.display.flip()
