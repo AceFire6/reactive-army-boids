@@ -25,7 +25,7 @@ def distance_to(point1, point2):
 
 def close_to(point, placed_units):
     return [unit for unit in placed_units
-            if distance_to(point, unit) < config.COLLISION_RANGE]
+            if distance_to(point, unit) < config.COLLISION_RANGE + 10]
 
 
 def get_closest(point, close_units):
@@ -126,11 +126,11 @@ def render(screen, placed_units):
                            add_tuple(direction, center), 5, 0)
 
     for unit in with_center(placed_units):
-        if unit == closest_to_mouse and dist <= config.COLLISION_RANGE:
+        if unit == closest_to_mouse and dist <= config.COLLISION_RANGE + 10:
             colour = config.RED
         if boundaries:
             pygame.draw.circle(screen, colour, unit,
-                               config.COLLISION_RANGE, 1)
+                               config.COLLISION_RANGE + 10, 1)
         pygame.draw.circle(screen, colour, unit,
                            2, 0)
         colour = config.WHITE
