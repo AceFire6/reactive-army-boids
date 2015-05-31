@@ -102,7 +102,9 @@ class Boid:
         dist = self.waypoint.get_position() - self.position
 
         if dist.get_length() > 2:
-            acceleration = dist.normalized() * 10
+            inv_dist = 1.0 / self.position.get_dist_sqrd(
+                self.waypoint.get_position())
+            acceleration = dist.normalized() * (10 * inv_dist)
 
         return acceleration
 
