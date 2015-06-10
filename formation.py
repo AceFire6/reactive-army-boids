@@ -7,7 +7,7 @@ class Formation(object):
     """Formation that handles all units it manages. Used to handle unit
     placement and waypoint updating.
     """
-    def __init__(self, filename=None):
+    def __init__(self, file=None):
         """Create a formation. If a filename is specified, the formation
         is loaded from there, otherwise, the file has to be specified later.
         """
@@ -16,8 +16,8 @@ class Formation(object):
         self._direction = Vec2d(0, 0)
         self.positions = []
         self.waypoints = []
-        if filename:
-            self.parse_formation_file(filename)
+        if file:
+            self.parse_formation_file(file)
 
     def parse_formation_file(self, open_file):
         """Open and parse the given formation file. Set up all the required
@@ -44,9 +44,9 @@ class Formation(object):
         specifying the x and y coordinates as separate arguments.
         """
         if y is None:
-            self.waypoint = center_pair_or_x
+            self._center = center_pair_or_x
         else:
-            self.waypoint = Vec2d(center_pair_or_x, y)
+            self._center = Vec2d(center_pair_or_x, y)
 
     def gen_and_get_boids(self):
         """Generate all the units in the formation based on their relative
