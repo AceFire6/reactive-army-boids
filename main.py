@@ -6,76 +6,79 @@ import config
 import pygame
 from vec2d import Vec2d
 
-boids = []
-enemies = []
-formation = None
-enemy_start = None
+units = []  # Units in the formation
+enemies = []  # Enemies added by the user
+formation = None  # The formation being used
+enemy_start = None  # The start point of the current enemy path
 
 
 def events():
-    global boids, enemies, formation, enemy_start
+    """Event section of game loop. Handle user input. Return boolean."""
+    global units, enemies, formation, enemy_start
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT:  # Program window quit button press
             return False
-        elif event.type == pygame.KEYUP:
+        elif event.type == pygame.KEYUP:  # Key pressed event
             if event.key == pygame.K_r:
-                boids = []
+                units = []
                 enemies = []
                 formation = None
                 enemy_start = None
             elif event.key == pygame.K_ESCAPE:
                 return False
             elif event.key == pygame.K_o and (pygame.key.get_mods() &
-                                              pygame.KMOD_CTRL):
+                                              pygame.KMOD_CTRL):  # Open file
                 options = {
                     'filetypes': [('Formations', '.fm')],
                     'title': 'Open formation'}
                 formation = Formation(tkFileDialog.askopenfile('r', **options))
-                boids = formation.gen_and_get_boids()
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+                units = formation.gen_and_get_boids()
+        elif event.type == pygame.MOUSEBUTTONDOWN:  # Mouse event
             states = pygame.mouse.get_pressed()
-            config.debug_print("STATES:", states)
             mouse_pos = pygame.mouse.get_pos()
-            if states == (1, 0, 0): # Left click
+            if states == (1, 0, 0):  # Left click - set enemy path
                 if not enemy_start:
                     enemy_start = mouse_pos
                 else:
                     enemies.append(Enemy(Vec2d(enemy_start), Vec2d(mouse_pos)))
                     enemy_start = None
-            elif states == (0, 0, 1): # Right click
+            elif states == (0, 0, 1):  # Right click - set waypoint
                 if formation:
                     formation.set_waypoint(mouse_pos)
     return True
 
 
-def loop(obstacles=None):
-    global boids, formation
+def update(obstacles=None):
+    """Update the formation and units."""
+    global units, formation
     if formation:
         formation.update()
-    for boid in boids:
+    for unit in units:
         if obstacles:
-            boid.update(boids, obstacles)
+            unit.update(units, obstacles)
         else:
-            boid.update(boids)
+            unit.update(units)
     for enemy in enemies:
         enemy.update()
 
 
 def render(screen):
-    global boids, formation
+    """Render section of game loop. Handle drawing."""
+    global units, formation
     screen.fill((0, 0, 0))
     if formation:
         pygame.draw.circle(screen, (0, 100, 200), formation.center, 5, 0)
-    for boid in boids:
-        pygame.draw.polygon(screen, boid.colour, boid.vertices)
+    for unit in units:
+        pygame.draw.polygon(screen, unit.colour, unit.vertices)
     for enemy in enemies:
         pygame.draw.polygon(screen, config.RED, enemy.vertices)
     pygame.display.flip()
 
 
 def main():
+    """Main game loop. Loop until events returns false."""
     pygame.init()
-    pygame.display.set_caption("Boids - Prototype")
+    pygame.display.set_caption("Reactive Formations")
     screen = pygame.display.set_mode(
         (config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
     running = True
@@ -88,7 +91,7 @@ def main():
         clock.tick(60)
         pygame.time.wait(1)
         running = events()
-        loop(enemies) if enemies else loop()
+        update(enemies) if enemies else update()
         render(screen)
 
 if __name__ == "__main__":
