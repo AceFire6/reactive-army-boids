@@ -1,0 +1,88 @@
+config.py
+    LOC: 20
+    LLOC: 12
+    SLOC: 16
+    Comments: 9
+    Multi: 0
+    Blank: 4
+    - Comment Stats
+        (C % L): 45%
+        (C % S): 56%
+        (C + M % L): 45%
+enemy.py
+    LOC: 31
+    LLOC: 24
+    SLOC: 26
+    Comments: 0
+    Multi: 3
+    Blank: 5
+    - Comment Stats
+        (C % L): 0%
+        (C % S): 0%
+        (C + M % L): 10%
+formation_designer.py
+    LOC: 168
+    LLOC: 122
+    SLOC: 139
+    Comments: 9
+    Multi: 3
+    Blank: 29
+    - Comment Stats
+        (C % L): 5%
+        (C % S): 6%
+        (C + M % L): 7%
+formation.py
+    LOC: 90
+    LLOC: 60
+    SLOC: 80
+    Comments: 0
+    Multi: 27
+    Blank: 10
+    - Comment Stats
+        (C % L): 0%
+        (C % S): 0%
+        (C + M % L): 30%
+main.py
+    LOC: 98
+    LLOC: 83
+    SLOC: 86
+    Comments: 10
+    Multi: 0
+    Blank: 12
+    - Comment Stats
+        (C % L): 10%
+        (C % S): 12%
+        (C + M % L): 10%
+unit.py
+    LOC: 179
+    LLOC: 123
+    SLOC: 152
+    Comments: 0
+    Multi: 30
+    Blank: 27
+    - Comment Stats
+        (C % L): 0%
+        (C % S): 0%
+        (C + M % L): 17%
+vec2d.py
+    LOC: 329
+    LLOC: 258
+    SLOC: 278
+    Comments: 13
+    Multi: 3
+    Blank: 51
+    - Comment Stats
+        (C % L): 4%
+        (C % S): 5%
+        (C + M % L): 5%
+waypoint.py
+    LOC: 13
+    LLOC: 10
+    SLOC: 10
+    Comments: 0
+    Multi: 0
+    Blank: 3
+    - Comment Stats
+        (C % L): 0%
+        (C % S): 0%
+        (C + M % L): 0%
